@@ -1,0 +1,15 @@
+server:
+  port: 7071
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/microservice_one
+    username: root
+    password: Tejas#07
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+  main:
+    allow-bean-definition-overriding: true
