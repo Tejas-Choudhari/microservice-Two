@@ -15,21 +15,11 @@ public class ServiceTwoController {
 
     @GetMapping("/food")
     public String getName() throws Exception {
-
-        // Send audit data to http://localhost:7000/api/data
-//        ServiceTwoEntity serviceTwoEntity = new ServiceTwoEntity(); // Create audit data object
-//        webClient.post()
-//                .uri("/api/data")
-//                .bodyValue(serviceTwoEntity)
-//                .retrieve()
-//                .bodyToMono(String.class)
-//                .block(); // Send POST request
-
-        return "Menu-> ladu , chivda, shankarpalya " ;
+        return "API-1 of the Microservices Two is Called ." ;
     }
 
     @GetMapping("/festiv")
     public String getPost(){
-        return "Festival -> Diwali , Dasara";
+        return "API-2 Of Miceroservices Two Called";
     }
 }
