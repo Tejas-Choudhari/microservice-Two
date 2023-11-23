@@ -28,6 +28,7 @@ public class ServiceTwoEntity {
     private String requestMethod;
     private String requestHeaderName;
     private String contentType;
+    private String queryParam;
     private String requestID;
     private String hostName;
     private String response;
