@@ -1,7 +1,7 @@
 package com.example.microservicetwo.intercepter;
 
 import com.example.microservicetwo.entity.ServiceTwoEntity;
-import com.example.microservicetwo.service.ServiceTwoService;
+//import com.example.microservicetwo.service.ServiceTwoService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +25,8 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
 
     private WebClient.Builder builder;
 
-    @Autowired
-    private ServiceTwoService serviceTwoService;
+//    @Autowired
+//    private ServiceTwoService serviceTwoService;
 
     Date requestTime = new Date(); // Capture the current date and time
 
@@ -80,7 +80,7 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         serviceTwoEntity.setRequestTime(dateFormat.format(requestTime));
         serviceTwoEntity.setResponseTime(dateFormat.format(responseTime));
         serviceTwoEntity.setStatusCode(response.getStatus());
-        serviceTwoEntity.setTimeTaken(String.valueOf(timeTaken));
+        serviceTwoEntity.setTimeTaken(String.valueOf(timeTaken) +" ms");
         serviceTwoEntity.setRequestURI(request.getRequestURI());
         serviceTwoEntity.setRequestMethod(request.getMethod());
         serviceTwoEntity.setRequestHeaderName(getRequestHeaderNames(request));
@@ -91,7 +91,7 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         serviceTwoEntity.setResponse(responseContent);
         serviceTwoEntity.setErrorTrace(errorStackTrace);
 
-        serviceTwoService.saveEntity(serviceTwoEntity);
+//        serviceTwoService.saveEntity(serviceTwoEntity);
 
         WebClient webClient = WebClient.create();
         webClient.post()
