@@ -23,4 +23,5 @@ public class ServiceTwoDto {
     private String hostName;
     private String response;
     private String errorTrace;
+    private String client_id;
 }

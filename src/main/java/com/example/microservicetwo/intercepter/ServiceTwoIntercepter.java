@@ -106,6 +106,10 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         serviceTwoEntity.setResponse(responseContent);
         serviceTwoEntity.setErrorTrace(errorStackTrace);
 
+        //for client ID
+        String client_id=request.getHeader("client_id");
+        serviceTwoEntity.setClient_id(client_id);
+
 
         WebClient webClient = WebClient.create();
         logger.info("Inside the Web Client ");
