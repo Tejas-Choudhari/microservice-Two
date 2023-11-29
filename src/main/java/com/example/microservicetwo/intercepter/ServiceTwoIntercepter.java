@@ -11,11 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
@@ -28,7 +36,7 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceTwoIntercepter.class);
 
-    private WebClient.Builder builder;
+    private WebClient.Builder webClient;
     Date requestTime = new Date(); // Capture the current date and time
     private long startTime;
 
@@ -111,28 +119,47 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         serviceTwoEntity.setClient_id(client_id);
 
 
-        WebClient webClient = WebClient.create();
-        logger.info("Inside the Web Client ");
-        webClient.post()
-                .uri("http://localhost:7000/api/data")
-                .body(BodyInserters.fromValue(serviceTwoEntity))
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-
+        //for sending the data
+        try {
+            WebClient webClient = WebClient.create();
+            String uri = "http://localhost:7000/api/data";
+            logger.info("Inside the Web Client ");
+            webClient.post()
+                    .uri(uri)
+                    .header("Authentication")
+                    .body(BodyInserters.fromValue(serviceTwoEntity))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            logger.info(" data send succesfully");
+        }  catch (WebClientResponseException clientException) {
+            logger.error("Error while sending data using WebClient. HTTP Status: {}", clientException.getRawStatusCode());
+            logger.error("Response body: {}", clientException.getResponseBodyAsString());
+        } catch (Exception webClientException) {
+            logger.error("Error while sending data using WebClient", webClientException);
+        }
 
     }
 
 
     private String getRequestHeaderNames(HttpServletRequest request) {
         logger.info("header Method is called");
+
         Enumeration<String> headerNames = request.getHeaderNames();
-        StringBuilder headerNamesStr = new StringBuilder();
+        StringBuilder headersStr = new StringBuilder();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
-            headerNamesStr.append(headerName).append(", ");
+            headersStr.append(headerName).append(": ");
+
+            Enumeration<String> headerValues = request.getHeaders(headerName);
+            while (headerValues.hasMoreElements()) {
+                String headerValue = headerValues.nextElement();
+                headersStr.append(headerValue).append(", ");
+            }
+            headersStr.delete(headersStr.length() - 2, headersStr.length());
+            headersStr.append(", ");
         }
-        return headerNamesStr.toString();
+        return headersStr.toString();
     }
 
     private String getResponse(ContentCachingResponseWrapper contentCachingResponseWrapper) {

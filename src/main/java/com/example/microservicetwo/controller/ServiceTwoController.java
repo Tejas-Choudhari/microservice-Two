@@ -21,14 +21,14 @@ public class ServiceTwoController {
 
     private String data;
 
-    public ServiceTwoController(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl("http://localhost:7000").build();
-    }
+//    public ServiceTwoController(WebClient.Builder webClientBuilder) {
+//        this.webClient = webClientBuilder.baseUrl("http://localhost:7000").build();
+//    }
 
-    @GetMapping("/food")
-    public String getName(@RequestHeader Map<String ,String> header) throws Exception {
-        logger.info("inside the /food API ");
-        return "API-1 of the Microservices Two is Called ." ;
+    @GetMapping("/food1")
+    public String getFood(@RequestHeader Map<String ,String> header){
+        logger.info(" inside the /food API ");
+        return "API-1 of miceroservices Two called ";
     }
 
     @GetMapping("/festiv")
