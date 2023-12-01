@@ -26,7 +26,7 @@ public class ServiceTwoController {
 //    }
 
     @GetMapping("/food1")
-    public String getFood(@RequestHeader Map<String ,String> header){
+    public String getFood(@RequestHeader Map<String ,String> header ,@RequestParam String name  ){
         logger.info(" inside the /food API ");
         return "API-1 of miceroservices Two called ";
     }

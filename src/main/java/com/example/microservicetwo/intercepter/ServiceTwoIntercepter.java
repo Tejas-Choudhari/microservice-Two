@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 @Slf4j
@@ -62,17 +63,6 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         Date responseTime = new Date(); // Capture the current date and time for response
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        //for error trace
-        String errorStackTrace = null;
-        logger.info("error tracking method executed");
-        if (ex != null) {
-            StringWriter sw = new StringWriter();
-            ex.printStackTrace(new PrintWriter(sw));
-            errorStackTrace = sw.toString();
-            System.out.println(" error trace : " + errorStackTrace);
-        }
-
-
         //for response
         ContentCachingResponseWrapper wrapper;
         logger.info("content caching filter applied");
@@ -83,21 +73,6 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         }
         String responseContent = getResponse(wrapper);
 
-
-        //for query parameter
-        Map<String, String[]> queryParams = request.getParameterMap();
-
-        for (Map.Entry<String, String[]> entry : queryParams.entrySet()) {
-            String paramName = entry.getKey();
-            String[] paramValues = entry.getValue();
-            String paramValue = (paramValues != null && paramValues.length > 0) ? paramValues[0] : null;
-
-            logger.info("Query Parameter: {} = {}", paramName, paramValue);
-
-            serviceTwoEntity.setQueryParam(paramValue);
-
-            // You can store or process the query parameter as needed
-        }
 
         //for storing into database
         serviceTwoEntity.setRequestTime(dateFormat.format(startTime));
@@ -112,7 +87,8 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         serviceTwoEntity.setRequestID(generateRequestId());
         serviceTwoEntity.setHostName(request.getServerName());
         serviceTwoEntity.setResponse(responseContent);
-        serviceTwoEntity.setErrorTrace(errorStackTrace);
+        serviceTwoEntity.setErrorTrace(errorStackTreeThread(ex));
+        serviceTwoEntity.setQueryParam(request.getQueryString());
 
         //for client ID
         String client_id=request.getHeader("client_id");
@@ -143,29 +119,53 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
 
 
     private String getRequestHeaderNames(HttpServletRequest request) {
-        logger.info("header Method is called");
 
-        Enumeration<String> headerNames = request.getHeaderNames();
-        StringBuilder headersStr = new StringBuilder();
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            headersStr.append(headerName).append(": ");
+        CompletableFuture <String> headerNameThread= CompletableFuture.supplyAsync(() -> {
+            try {
+                logger.info(" inside the Thread of getting header response");
+                Enumeration<String> headerNames = request.getHeaderNames();
+                StringBuilder headersStr = new StringBuilder();
 
-            Enumeration<String> headerValues = request.getHeaders(headerName);
-            while (headerValues.hasMoreElements()) {
-                String headerValue = headerValues.nextElement();
-                headersStr.append(headerValue).append(", ");
+                while (headerNames.hasMoreElements()) {
+                    String headerName = headerNames.nextElement();
+                    headersStr.append(headerName).append(": ");
+
+                    Enumeration<String> headerValues = request.getHeaders(headerName);
+                    while (headerValues.hasMoreElements()) {
+                        String headerValue = headerValues.nextElement();
+                        headersStr.append(headerValue).append(", ");
+                    }
+                    headersStr.delete(headersStr.length() - 2, headersStr.length());
+                    headersStr.append(", ");
+                }
+
+                return headersStr.toString();
+            }catch (Exception e) {
+                logger.error("Error getting header name asynchronously", e);
+                return "Error occurred";
             }
-            headersStr.delete(headersStr.length() - 2, headersStr.length());
-            headersStr.append(", ");
-        }
-        return headersStr.toString();
+        });
+        logger.info(" header name Thread executed");
+        return headerNameThread.join();
     }
 
-    private String getResponse(ContentCachingResponseWrapper contentCachingResponseWrapper) {
-        logger.info("response method is called ");
-        String response = IOUtils.toString(contentCachingResponseWrapper.getContentAsByteArray(), contentCachingResponseWrapper.getCharacterEncoding());
-        return response;
+    public String getResponse(ContentCachingResponseWrapper contentCachingResponseWrapper) {
+        logger.info("Getting response asynchronously");
+
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            try {
+//                Thread.sleep(1000);
+                logger.info("Getting response");
+                String response = IOUtils.toString(contentCachingResponseWrapper.getContentAsByteArray(),
+                        contentCachingResponseWrapper.getCharacterEncoding());
+                return response;
+            } catch (Exception e) {
+                logger.error("Error getting response asynchronously", e);
+                return "Error occurred";
+            }
+        });
+        logger.info("thread executed");
+        return future.join();
     }
 
     //for request id
@@ -184,9 +184,43 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
     }
 
     private static String generateRandomAlphanumeric() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        int randomIndex = (int) (Math.random() * characters.length());
-        return characters.substring(randomIndex, randomIndex + 1);
+        logger.info(" inside the generateRandomAlphanumeric method");
+        CompletableFuture <String> aplha= CompletableFuture.supplyAsync(() -> {
+            logger.info(" generateRandomAlphanumeric thread started");
+            try {
+                String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                int randomIndex = (int) (Math.random() * characters.length());
+                return characters.substring(randomIndex, randomIndex + 1);
+            } catch (Exception e) {
+                logger.error("Error getting alpha numaric ID asynchronously", e);
+                return "Error occurred";
+            }
+        });
+        logger.info(" generateRandomAlphanumeric thread completed");
+        return aplha.join();
+    }
+    public String errorStackTreeThread(Exception ex){
+        logger.info("inside the errorStackThread");
+        CompletableFuture <String> errorThread = CompletableFuture.supplyAsync(()-> {
+            try {
+
+                String errorStackTrace = null;
+                logger.info("error trace ");
+                if (ex != null) {
+                    // Capture the exception stack trace in a variable
+                    StringWriter sw = new StringWriter();
+                    ex.printStackTrace(new PrintWriter(sw));
+                    errorStackTrace = sw.toString();
+                    System.out.println(" error trace : " + errorStackTrace);
+                }
+                return errorStackTrace;
+            }catch (Exception e) {
+                logger.error("Error getting errorStackTrace asynchronously", e);
+                return "Error occurred";
+            }
+        });
+        logger.info("Thread executed");
+        return errorThread.join();
     }
 
 }
