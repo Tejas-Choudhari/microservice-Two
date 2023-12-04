@@ -106,7 +106,7 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
                     .body(BodyInserters.fromValue(serviceTwoEntity))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .block();
+                    .toFuture();
             logger.info(" data send succesfully");
         }  catch (WebClientResponseException clientException) {
             logger.error("Error while sending data using WebClient. HTTP Status: {}", clientException.getRawStatusCode());
@@ -138,7 +138,6 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
                     headersStr.delete(headersStr.length() - 2, headersStr.length());
                     headersStr.append(", ");
                 }
-
                 return headersStr.toString();
             }catch (Exception e) {
                 logger.error("Error getting header name asynchronously", e);
@@ -202,8 +201,8 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
     public String errorStackTreeThread(Exception ex){
         logger.info("inside the errorStackThread");
         CompletableFuture <String> errorThread = CompletableFuture.supplyAsync(()-> {
-            try {
 
+            try {
                 String errorStackTrace = null;
                 logger.info("error trace ");
                 if (ex != null) {
