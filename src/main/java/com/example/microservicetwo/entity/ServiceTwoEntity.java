@@ -22,7 +22,7 @@ public class ServiceTwoEntity {
     //extra fields
     private String requestTime;
     private String responseTime;
-    private int StatusCode;
+    private int statusCode;
     private String timeTaken;
     private String requestURI;
     private String requestMethod;
@@ -33,5 +33,5 @@ public class ServiceTwoEntity {
     private String hostName;
     private String response;
     private String errorTrace;
-    private String client_id;
+    private String clientId;
 }

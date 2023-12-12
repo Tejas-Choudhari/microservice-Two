@@ -1,13 +1,11 @@
 package com.example.microservicetwo.intercepter;
 
 import com.example.microservicetwo.entity.ServiceTwoEntity;
-//import com.example.microservicetwo.service.ServiceTwoService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,19 +13,11 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.apache.commons.io.IOUtils;
-
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -35,10 +25,11 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class ServiceTwoIntercepter implements HandlerInterceptor {
 
+
     private static final Logger logger = LoggerFactory.getLogger(ServiceTwoIntercepter.class);
 
-    private WebClient.Builder webClient;
-    Date requestTime = new Date(); // Capture the current date and time
+    String error =" Error occured";
+    Date mainRequestTime = new Date(); // Capture the current date and time
     private long startTime;
 
 
@@ -46,9 +37,6 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         logger.info("prehandling started");
         startTime = System.currentTimeMillis();
-        Date requestTime = new Date(); // Capture the current date and time
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        System.out.println("Request Time: " + dateFormat.format(requestTime));
         request.setAttribute("startTime", startTime);
         return true;
     }
@@ -66,7 +54,7 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         //for response
         ContentCachingResponseWrapper wrapper;
         logger.info("content caching filter applied");
-        if (response instanceof ContentCachingResponseWrapper) {
+        if (response instanceof ContentCachingResponseWrapper) { //response wrapper
             wrapper = (ContentCachingResponseWrapper) response;
         } else {
             wrapper = new ContentCachingResponseWrapper(response);
@@ -91,8 +79,8 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
         serviceTwoEntity.setQueryParam(request.getQueryString());
 
         //for client ID
-        String client_id=request.getHeader("client_id");
-        serviceTwoEntity.setClient_id(client_id);
+        String clientId=request.getHeader("client_id");
+        serviceTwoEntity.setClientId(clientId);
 
 
         //for sending the data
@@ -102,21 +90,20 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
             logger.info("Inside the Web Client ");
             webClient.post()
                     .uri(uri)
-                    .header("Authentication")
+                    .header("Authentication", "")
                     .body(BodyInserters.fromValue(serviceTwoEntity))
                     .retrieve()
                     .bodyToMono(String.class)
                     .toFuture();
             logger.info(" data send succesfully");
         }  catch (WebClientResponseException clientException) {
-            logger.error("Error while sending data using WebClient. HTTP Status: {}", clientException.getRawStatusCode());
+            logger.error("Error while sending data using WebClient. HTTP Status: {}", clientException.getStatusCode());
             logger.error("Response body: {}", clientException.getResponseBodyAsString());
         } catch (Exception webClientException) {
             logger.error("Error while sending data using WebClient", webClientException);
         }
 
     }
-
 
     private String getRequestHeaderNames(HttpServletRequest request) {
 
@@ -141,7 +128,7 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
                 return headersStr.toString();
             }catch (Exception e) {
                 logger.error("Error getting header name asynchronously", e);
-                return "Error occurred";
+                return error;
             }
         });
         logger.info(" header name Thread executed");
@@ -153,14 +140,13 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
 
         CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
             try {
-//                Thread.sleep(1000);
                 logger.info("Getting response");
-                String response = IOUtils.toString(contentCachingResponseWrapper.getContentAsByteArray(),
+                return IOUtils.toString(contentCachingResponseWrapper.getContentAsByteArray(),
                         contentCachingResponseWrapper.getCharacterEncoding());
-                return response;
+
             } catch (Exception e) {
                 logger.error("Error getting response asynchronously", e);
-                return "Error occurred";
+                return error;
             }
         });
         logger.info("thread executed");
@@ -171,18 +157,17 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
     public static String generateRequestId() {
         logger.info(" generating alphanumaric request ID ");
         UUID uuid = UUID.randomUUID();
-        String string = uuid.toString().replaceAll("-", ""); // Remove hyphens
-        String alphanumericCharacters = string.replaceAll("[^A-Za-z0-9]", ""); // Remove non-alphanumeric characters
-//        int randomIndex = (int) (Math.random() * alphanumericCharacters.length());
-
+        String string = uuid.toString().replace("-", ""); // Remove hyphens
+        StringBuilder alphanumericCharacters = new StringBuilder(string.replaceAll("[^A-Za-z0-9]", "")); // Remove non-alphanumeric characters
         while (alphanumericCharacters.length() < 10) {
-            alphanumericCharacters += generateRandomAlphanumeric();
+            alphanumericCharacters.append(generateRandomAlphanumeric());
         }
 
         return alphanumericCharacters.substring(0, 10);
     }
 
     private static String generateRandomAlphanumeric() {
+
         logger.info(" inside the generateRandomAlphanumeric method");
         CompletableFuture <String> aplha= CompletableFuture.supplyAsync(() -> {
             logger.info(" generateRandomAlphanumeric thread started");
@@ -210,7 +195,6 @@ public class ServiceTwoIntercepter implements HandlerInterceptor {
                     StringWriter sw = new StringWriter();
                     ex.printStackTrace(new PrintWriter(sw));
                     errorStackTrace = sw.toString();
-                    System.out.println(" error trace : " + errorStackTrace);
                 }
                 return errorStackTrace;
             }catch (Exception e) {
